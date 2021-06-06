@@ -5,4 +5,4 @@ marioparty 1-1조별과제
 1. 마지막 미니게임이 끝나면 바로 엔딩씬으로 들어갑니다
 2. 한번한 미니게임은 다시 스테이지로 진입했을때 할 수 있는 것도 있고 아닌 것도 있습니다.
 
-Youtube 링크: 
+Youtube 링크: https://youtu.be/is3lf0OPlMM
