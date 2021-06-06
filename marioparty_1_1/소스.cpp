@@ -42,9 +42,10 @@
 
 
 //마리오 파티 큰 틀에서의 장면들과 오브젝트
-SceneID mario_game_description, game_board, card_draw_place, dice_roll_place;
-ObjectID mario_party_next, run_dice;
+SceneID mario_game_description, game_board, card_draw_place, dice_roll_place, mario_party_final_cal;
+ObjectID mario_party_next, run_dice, Game_end;
 ObjectID player1_object, player2_object, player3_object;
+SoundID mario_party_sound1;
 //마리오파티 플레이어 움직이는 타이머 12개!
 //0->1 ~~~~~~~~~~~~~~~~~~ 11~12
 TimerID moving_timer_1, moving_timer_2, moving_timer_3, moving_timer_4;
@@ -54,12 +55,6 @@ TimerID moving_timer_9, moving_timer_10, moving_timer_11, moving_timer_12;
 TimerID enter_1_1, enter_1_2, enter_1_3, enter_1_4;
 TimerID enter_2_1, enter_2_2, enter_2_3, enter_2_4;
 TimerID enter_3_1, enter_3_2, enter_3_3, enter_3_4;
-//임시로 만든 scene들 -- 총 9개임 // 미니게임 스테이지임 각각
-SceneID temp_stage_1_2, temp_stage_1_4;
-SceneID temp_stage_2_2;
-SceneID temp_stage_3_1;
-//임시 실험용!! back
-ObjectID back1, back2, back3, back4, back5, back6, back7, back8, back9, back10, back11, back12;
 //주사위 굴리는 장소에서의 물체들(임의로 주사위로 칭함 숫자는 1-3까지 있음)-그냥 슬롯머신임 ㅇㅇ
 ObjectID dice_slot, dice_num, run_dice_in;
 //주사위 굴리는 장소에서의 타이머 설정
@@ -96,10 +91,11 @@ bool in_game_board = false;
 bool stage_1_1 = false, stage_1_2 = false, stage_1_4 = false;
 bool stage_2_1 = false, stage_2_2 = false, stage_2_4 = false;
 bool stage_3_1 = false, stage_3_2 = false, stage_3_4 = false;
-//3-1, 3-2, 3-4는 한번만 운영
-bool stage_3_1_finish = false;
-bool stage_3_2_finish = false;
-bool stage_3_4_finish = false;
+//모든 스테이지는 한번만 운영
+bool stage_1_2_finish = false, stage_3_1_finish = false;
+bool stage_2_2_finish = false, stage_3_2_finish = false;
+bool stage_1_4_finish = false, stage_2_4_finish = false, stage_3_4_finish = false;
+bool final_cal = false;
 //bool형으로 player중 누가 이동할 차례인지 알아봄
 bool player1 = false;
 bool player2 = false;
@@ -170,6 +166,45 @@ int pm_game_calculation(int* pm, int* num);
 
 void mouseCallback_pm_game(ObjectID object, int x, int y, MouseAction action);
 void timerCallback_pm_game(TimerID timer);
+//여기까지 1-1 전역변수 및 함수
+
+//여기부터 1-2 달리기게임 전역변수 및 함수
+SceneID scene_running_playground, scene_running_explain, scene_running_end;
+ObjectID startbutton_running, pitch1_running, mario1_running, mush1_running;
+TimerID running_game_escape_timer;
+int pitch1X = 0, pitch1Y = 360;
+int mario1X = 0, mario1Y = 190;
+int mush1X = 0, mush1Y = 40;
+void mouseCallback_running_game(ObjectID object, int x, int y, MouseAction action);
+void keyboardCallback_running_game(KeyCode code, KeyState state);
+void timerCallback_running_game(TimerID timer);
+//여기까지 1-2 달리기게임 전역변수 및 함수
+
+//여기부터 1-4 스테이지 전역변수 및 함수
+SceneID puzzle_game_scene1;
+ObjectID puzzle_game_next;
+ObjectID puzzle_game_s[10];
+TimerID puzzle_game_timer1, puzzle_game_timer2, puzzle_game_escape_timer;
+int puzzle_game_X[5] = { 0,340,540,740,0 };
+int puzzle_game_Y[5] = { 0,460,260,60,0 };
+int puzzle_game_YX[5][5] = { {-1,-1,-1,-1,-1},
+							{-1,1,2,3,-1},
+							{-1,4,5,6,-1},
+							{-1,7,8,9,-1},
+							{-1,-1,-1,-1,-1} };
+int puzzle_game_cx, puzzle_game_cy, puzzle_game_snum = 1, puzzle_game_success = 0;
+int puzzle_game_r_num, puzzle_game_x0, puzzle_game_y0;
+int puzzle_game_dif = 50;
+float puzzle_game_t, puzzle_game_t1, puzzle_game_t2, puzzle_game_t3;
+int puzzle_game_pT = 1;
+void puzzle_game_setS();
+void puzzle_game_move1(int num1, int x1, int y1, int x2, int y2);
+void puzzle_game_move2(int x1, int y1, int x2, int y2);
+void puzzle_game_moveS(int num);
+void puzzle_game_arrangeS();
+void mouseCallback_puzzle_game(ObjectID object, int x, int y, MouseAction action);
+void timerCallback_puzzle_game(TimerID timer);
+//여기까지 1-4 스테이지 전역변수 및 함수
 
 
 //2-1 스테이지에 들어갈 카드맞추기 게임에 대한 전역 변수
@@ -204,6 +239,42 @@ void mouseCallback_card_match(ObjectID object, int x, int y, MouseAction action)
 void timerCallback_card_match(TimerID timer);
 //여기까지 카드 맞추기 함수와 전역변수 끝~
 
+//2-2 스테이지에 들어간 전역변수와 함수들
+SceneID scene_escape_explain, scene_escape_playground, scene_escape_end;
+ObjectID player1_escape, player2_escape, player3_escape, startbutton_escape, endbutton_escape;
+TimerID timer1_escape, timer2_escape, timer3_escape, escaping_game_escape_timer;
+int speed_escape = 0;
+int speed1_escape = 0;
+int speed2_escape = 0;
+int x_escape = 600;
+int x1_escape = 300;
+int x2_escape = 900;
+int foesspeed = 1;
+int score_escape = 0;
+ObjectID foes[100];
+int foesX[100];
+int foesY[100];
+float foesSize[100];
+
+void escaping_game_createFoes();
+void escaping_game_foesmove();
+bool escaping_game_pointInRect(int x, int y, int rx, int ry, int size);
+bool escaping_game_pointInRect1(int x1, int y1, int rx1, int ry1, int size);
+bool escaping_game_pointInRect2(int x2, int y2, int rx2, int ry2, int size);
+bool escaping_game_collided(int x, int y, int rx, int ry, int size);
+bool escaping_game_collided2(int x1, int y1, int rx1, int ry1, int size);
+bool escaping_game_collided3(int x2, int y2, int rx2, int ry2, int size);
+bool escaping_game_checkCollision();
+bool escaping_game_checkCollision1();
+bool escaping_game_checkCollision2();
+void keyboardCallback_escaping_game(KeyCode code, KeyState state);
+void escaping_game_player1move();
+void escaping_game_player2move();
+void escaping_game_player3move();
+void mouseCallback_escaping_game(ObjectID object, int x, int y, MouseAction action);
+void timerCallback_escaping_game(TimerID timer);
+//여기까지 2-2 스테이지에 들어갈 전역변수와 함수들
+
 //2-4 스테이지에 들어갈 전역변수와 함수들
 SceneID slot_game_slot_description, slot_game_board, slot_game_final_cal;
 ObjectID slot_game_Next, slot_game_player;
@@ -235,6 +306,48 @@ void slot_game_game_reset();
 void mouseCallback_slot_game(ObjectID object, int x, int y, MouseAction action);
 void timerCallback_slot_game(TimerID timer);
 //여기까지 2-4스테이지 슬롯머신 함수들
+
+//여기부터 3-1 스테이지 미로 전역변수 및 함수들
+int maze_game_block[18][32] = { {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+							    {1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1,1,0,1,0,0,0,1},
+							    {1,0,0,0,1,1,1,1,1,1,1,1,0,1,0,1,1,1,0,0,0,1,1,0,0,0,0,1,0,1,0,1},
+							    {1,1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1,1,0,1,1,1,0,0,0,1,1,1,0,1,0,1},
+							    {1,1,0,0,1,1,1,1,0,1,1,1,0,1,1,0,1,1,0,0,0,0,0,1,0,0,0,0,0,1,0,1},
+							    {1,1,0,0,1,1,1,1,0,1,1,1,0,0,0,0,1,1,0,1,1,0,0,1,0,1,1,1,1,1,0,1},
+							    {1,0,0,0,0,0,1,1,0,0,0,0,0,1,1,0,1,1,0,1,1,0,1,1,0,1,0,0,0,0,0,1},
+							    {1,0,0,0,0,0,1,1,0,1,1,1,0,1,0,0,0,1,0,0,0,0,1,1,0,1,0,0,0,0,0,1},
+							    {1,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,1,0,1,1,0,1,1,0,1,0,2,2,2,0,1},
+							    {1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,0,0,0,0,1,0,2,2,2,0,1},
+							    {1,0,0,0,0,0,1,0,1,1,0,1,1,1,0,0,0,1,0,1,1,1,1,0,0,1,0,0,0,0,0,1},
+							    {1,0,0,0,0,0,1,0,1,1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,0,0,0,0,0,1},
+							    {1,1,0,0,1,1,1,0,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1},
+							    {1,1,0,0,1,1,1,0,1,1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,1,0,0,0,0,0,0,1},
+							    {1,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,0,0,0,0,0,1,1,0,1,0,1,1,1,1,0,1},
+							    {1,0,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,0,1},
+							    {1,0,0,0,1,0,1,1,1,1,0,0,0,0,0,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,1},
+							    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1} };
+SceneID maze_game_scene1;
+ObjectID maze_game_p1, maze_game_p2, maze_game_p3, maze_game_M, maze_game_light, maze_game_success, maze_game_next;
+TimerID maze_game_timer1, maze_game_escape_timer;
+int maze_game_IX = 80, maze_game_IY = 300;
+int maze_game_p1dx, maze_game_p1dy, maze_game_p2dx, maze_game_p2dy, maze_game_p3dx, maze_game_p3dy;
+int maze_game_RN;
+int maze_game_speed = 2, maze_game_lt = 1;
+float maze_game_bm = 2;
+float maze_game_t = 0;
+float maze_game_p1x = maze_game_IX, maze_game_p1y = maze_game_IY, maze_game_p2x = maze_game_IX + 30;
+float maze_game_p2y = maze_game_IY, maze_game_p3x = maze_game_IX + 60, maze_game_p3y = maze_game_IY;
+float maze_game_MX = 604, maze_game_MY = 324;
+
+int maze_game_direction(int dx, int dy);
+void maze_game_backmove(float* x, float* y, int dir);
+void maze_game_isBlocked(ObjectID object, int x, int y, int dir);
+void maze_game_checkBlock(ObjectID object, int x, int y, int dir, int size);
+void maze_game_setImageD(ObjectID object1, int id, int dir);
+void timerCallback_maze_game(TimerID timer);
+void keyboardCallback_maze_game(KeyCode code, KeyState state);
+void mouseCallback_maze_game(ObjectID object, int x, int y, MouseAction action);
+//여기까지 3-1 스테이지 미로 전역변수 및 함수들
 
 //여기부터 3-2 숨은 그림 찾기 전역변수 및 함수들
 int find_game_block[18][32] = { {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -339,6 +452,7 @@ void keyboardCallback_area_game(KeyCode code, KeyState state);
 //player1, player2, player3를 번갈아서 돌아갈 수 있도록 만듬
 //각 스테이지 미니게임이 끝날때마다 이 함수 써주는거 필수!!!!!!!
 void change_player() {
+	//만약 위치가 3-4일때 경우의 수 따져줘야함
 	if (player1 == true) {
 		player1 = false;
 		player2 = true;
@@ -354,28 +468,108 @@ void change_player() {
 }
 //일단 움직이는건 이 아래 함수들로 만드는데 진입 할때를 적절히 정해줘야할듯
 
+void showMessagewinner(int score1, int score2, int score3) {
+	char buff1[300];
+	char buff2[100];
+	char buff3[100];
+	sprintf(buff1, "Player1: %d등\n", score1);
+	sprintf(buff2, "Player2: %d등\n", score2);
+	sprintf(buff3, "Player3: %d등\n", score3);
+	strcat(buff1, buff2);
+	strcat(buff1, buff3);
+	showMessage(buff1);
+}
+
+void check_mario_party_winner() {
+	int player1_score = mario_party_player1_score;
+	int player2_score = mario_party_player2_score;
+	int player3_score = mario_party_player3_score;
+	if (player1_score > player2_score && player1_score > player3_score) {
+		if (player2_score > player3_score) {
+			showMessagewinner(1, 2, 3);
+		}
+		else if (player2_score < player3_score) {
+			showMessagewinner(1, 3, 2);
+		}
+	}
+	else if (player2_score > player1_score && player2_score > player3_score) {
+		if (player1_score > player3_score) {
+			showMessagewinner(2, 1, 3);
+		}
+		else if (player1_score < player3_score) {
+			showMessagewinner(3, 1, 2);
+		}
+	}
+	else if (player3_score > player1_score && player3_score > player2_score) {
+		if (player1_score > player2_score) {
+			showMessagewinner(2, 3, 1);
+		}
+		else if (player1_score < player2_score) {
+			showMessagewinner(3, 2, 1);
+		}
+	}
+	else if (player1_score == player2_score) {
+		if (player1_score < player3_score) {
+			showMessagewinner(3, 3, 1);
+		}
+		else if (player1_score > player3_score) {
+			showMessagewinner(1, 1, 3);
+		}
+	}
+	else if (player1_score == player3_score) {
+		if (player1_score < player2_score) {
+			showMessagewinner(3, 1, 3);
+		}
+		else if (player1_score > player2_score) {
+			showMessagewinner(1, 3, 1);
+		}
+	}
+	else if (player2_score == player3_score) {
+		if (player1_score < player2_score) {
+			showMessagewinner(3, 1, 1);
+		}
+		else if (player1_score > player2_score) {
+			showMessagewinner(1, 3, 3);
+		}
+	}
+	else if (player1_score == player2_score && player2_score == player3_score) {
+		showMessagewinner(1, 1, 1);
+	}
+}
+
 //주사위를 통해서 플레이어 위치를 변경시켜주는 함수
 void create_dice_number() {
 	int random_create = rand() % 3 + 1;
 	char buff[100];
 	sprintf(buff, "Images/roll_dice%d.png", random_create);
 	setObjectImage(dice_num, buff);
-	random_result = 8;
+	random_result = random_create;
 }
+
+
 
 void move_player(int dice_result) {
 	int random_move = dice_result;
 	if (player1 == true) {
 		player1_future_location = player1_location;
 		player1_location += random_move;
+		if (player1_location >= 12) {
+			player1_location = 12;
+		}
 	}
 	else if (player2 == true) {
 		player2_future_location = player2_location;
 		player2_location += random_move;
+		if (player2_location >= 12) {
+			player2_location = 12;
+		}
 	}
 	else if (player3 == true) {
 		player3_future_location = player3_location;
 		player3_location += random_move;
+		if (player3_location >= 12) {
+			player3_location = 12;
+		}
 	}
 }
 
@@ -639,10 +833,6 @@ void random_result_3() {
 	}
 }
 
-void random_result_8() {
-	startTimer(enter_1_1);
-}
-
 void player_move_random_result() {
 	switch (random_result) {
 	case 1:
@@ -653,9 +843,6 @@ void player_move_random_result() {
 		break;
 	case 3:
 		random_result_3();
-		break;
-	case 8:
-		random_result_8();
 		break;
 	}
 }
@@ -891,65 +1078,18 @@ void mousecallback_choose_card(ObjectID object, int x, int y, MouseAction action
 	}
 }
 
-//임시 back의 마우스콜백
-
-void mouseCallback_temp_back(ObjectID object, int x, int y, MouseAction action) {
-	if (stage_1_2 == true) {
-		if (object == back2) {
-			stage_1_2 = false;
-			in_game_board = true;
-			enterScene(game_board);
-			change_player();
-			showObject(run_dice);
-		}
-	}
-	else if (stage_1_4 == true) {
-		if (object == back4) {
-			stage_1_4 = false;
-			in_game_board = true;
-			enterScene(game_board);
-			change_player();
-			showObject(run_dice);
-		}
-	}
-	else if (stage_2_1 == true) {
-		if (object == back5) {
-			stage_2_1 = false;
-			in_game_board = true;
-			enterScene(game_board);
-			change_player();
-			showObject(run_dice);
-		}
-	}
-	else if (stage_2_2 == true) {
-		if (object == back6) {
-			stage_2_2 = false;
-			in_game_board = true;
-			enterScene(game_board);
-			change_player();
-			showObject(run_dice);
-		}
-	}
-	else if (stage_3_1 == true) {
-		if (object == back9) {
-			stage_3_1 = false;
-			in_game_board = true;
-			enterScene(game_board);
-			change_player();
-			showObject(run_dice);
-		}
-	}
-}
-
 //마리오 파티라는 큰 게임틀에서만의 mousecallback 다른 클릭은 다른 mousecallback 생성 권유
 void mouseCallback_mario_party(ObjectID object, int x, int y, MouseAction action) {
 	mousecallback_choose_card(object, x, y, action);
-	mouseCallback_temp_back(object, x, y, action);
 	mouseCallback_card_match(object, x, y, action);
 	mouseCallback_pm_game(object, x, y, action);
 	mouseCallback_slot_game(object, x, y, action);
 	mouseCallback_area_game(object, x, y, action);
 	mouseCallback_find_game(object, x, y, action);
+	mouseCallback_maze_game(object, x, y, action);
+	mouseCallback_running_game(object, x, y, action);
+	mouseCallback_puzzle_game(object, x, y, action);
+	mouseCallback_escaping_game(object, x, y, action);
 	// 처음 시작장면 - 설명에서의 mouseCallback
 	if (object == mario_party_next) {
 		enterScene(game_board);
@@ -972,6 +1112,11 @@ void mouseCallback_mario_party(ObjectID object, int x, int y, MouseAction action
 			startTimer(rolling_time);
 			startTimer(rolling_dice_timer);
 			hideObject(run_dice_in);
+		}
+	}
+	if (final_cal == true) {
+		if (object == Game_end) {
+			endGame();
 		}
 	}
 }
@@ -1062,11 +1207,16 @@ void timerCallback_mario_party_enter_Scene(TimerID timer) {
 			in_game_board = false;
 			stage_1_1 = true;
 		}
-		else if (timer == enter_1_2) {
-			enterScene(temp_stage_1_2);
+		else if (timer == enter_1_2 && stage_1_2_finish == false) {
+			enterScene(scene_running_explain);
 			setTimer(enter_1_2, 2.f);
 			in_game_board = false;
 			stage_1_2 = true;
+		}
+		else if (timer == enter_1_2 && stage_1_2_finish == true) {
+			setTimer(enter_1_2, 2.f);
+			showObject(run_dice);
+			change_player();
 		}
 		else if (timer == enter_1_3) {
 			enterScene(card_draw_place);
@@ -1075,11 +1225,16 @@ void timerCallback_mario_party_enter_Scene(TimerID timer) {
 			in_game_board = false;
 			card_on = true;
 		}
-		else if (timer == enter_1_4) {
-			enterScene(temp_stage_1_4);
+		else if (timer == enter_1_4 && stage_1_4_finish == false) {
+			enterScene(puzzle_game_scene1);
 			setTimer(enter_1_4, 2.f);
 			in_game_board = false;
 			stage_1_4 = true;
+		}
+		else if (timer == enter_1_4 && stage_1_4_finish == true) {
+			setTimer(enter_1_4, 2.f);
+			showObject(run_dice);
+			change_player();
 		}
 		else if (timer == enter_2_1) {
 			enterScene(card_match_card_description);
@@ -1087,11 +1242,16 @@ void timerCallback_mario_party_enter_Scene(TimerID timer) {
 			in_game_board = false;
 			stage_2_1 = true;
 		}
-		else if (timer == enter_2_2) {
-			enterScene(temp_stage_2_2);
+		else if (timer == enter_2_2 && stage_2_2_finish == false) {
+			enterScene(scene_escape_explain);
 			setTimer(enter_2_2, 2.f);
 			in_game_board = false;
 			stage_2_2 = true;
+		}
+		else if (timer == enter_2_2 && stage_2_2_finish == true) {
+			setTimer(enter_2_2, 2.f);
+			showObject(run_dice);
+			change_player();
 		}
 		else if (timer == enter_2_3) {
 			enterScene(card_draw_place);
@@ -1100,17 +1260,27 @@ void timerCallback_mario_party_enter_Scene(TimerID timer) {
 			in_game_board = false;
 			card_on = true;
 		}
-		else if (timer == enter_2_4) {
+		else if (timer == enter_2_4 && stage_2_4_finish == false) {
 			enterScene(slot_game_slot_description);
 			setTimer(enter_2_4, 2.f);
 			in_game_board = false;
 			stage_2_4 = true;
 		}
-		else if (timer == enter_3_1) {
-			enterScene(temp_stage_3_1);
+		else if (timer == enter_2_4 && stage_2_4_finish == true) {
+			setTimer(enter_2_4, 2.f);
+			showObject(run_dice);
+			change_player();
+		}
+		else if (timer == enter_3_1 && stage_3_1_finish == false) {
+			enterScene(maze_game_scene1);
 			setTimer(enter_3_1, 2.f);
 			in_game_board = false;
 			stage_3_1 = true;
+		}
+		else if (timer == enter_3_1 && stage_3_1_finish == true) {
+			setTimer(enter_3_1, 2.f);
+			showObject(run_dice);
+			change_player();
 		}
 		else if (timer == enter_3_2 && stage_3_2_finish == false) {
 			enterScene(find_game_scene1);
@@ -1121,6 +1291,7 @@ void timerCallback_mario_party_enter_Scene(TimerID timer) {
 		else if (timer == enter_3_2 && stage_3_2_finish == true) {
 			setTimer(enter_3_2, 2.f);
 			showObject(run_dice);
+			change_player();
 		}
 		else if (timer == enter_3_3) {
 			enterScene(card_draw_place);
@@ -1138,6 +1309,7 @@ void timerCallback_mario_party_enter_Scene(TimerID timer) {
 		else if (timer == enter_3_4 && stage_3_4_finish == true) {
 			setTimer(enter_3_4, 2.f);
 			showObject(run_dice);
+			change_player();
 		}
 	}
 }
@@ -1149,6 +1321,10 @@ void timerCallback_mario_party(TimerID timer) {
 	timerCallback_slot_game(timer);
 	timerCallback_area_game(timer);
 	timerCallback_find_game(timer);
+	timerCallback_maze_game(timer);
+	timerCallback_running_game(timer);
+	timerCallback_puzzle_game(timer);
+	timerCallback_escaping_game(timer);
 	//dice_roll_place에서의 타이머
 	if (dice_on == true) {
 		if (timer == rolling_time) {
@@ -1191,6 +1367,9 @@ void timerCallback_mario_party(TimerID timer) {
 void keyboardCallback_mario_party(KeyCode code, KeyState state) {
 	keyboardCallback_area_game(code, state);
 	keyboardCallback_find_game(code, state);
+	keyboardCallback_maze_game(code, state);
+	keyboardCallback_running_game(code, state);
+	keyboardCallback_escaping_game(code, state);
 }
 
 int main() {
@@ -1205,15 +1384,18 @@ int main() {
 	game_board = createScene("게임판", "Images/game_board.png");
 	card_draw_place = createScene("카드 뽑기", "Images/draw_card_board.png");
 	dice_roll_place = createScene("주사위 굴리기", "Images/dice_board.png");
-	//진입 스테이지 
-	temp_stage_1_2 = createScene("임시 1-2", "Images/dice_board.png");
-	temp_stage_1_4 = createScene("임시 1-4", "Images/dice_board.png");
-	temp_stage_2_2 = createScene("임시 2-2", "Images/dice_board.png");
-	temp_stage_3_1 = createScene("임시 3-1", "Images/dice_board.png");
+	mario_party_final_cal = createScene("게임 정산", "Images/final_cal.png");
+
+	mario_party_sound1 = createSound("sounds/Paper Mario Medley.mp3");
+	playSound(mario_party_sound1, 1);
+
+	Game_end = createObject("Images/end.png");
+	locateObject(Game_end, mario_party_final_cal, 540, 30);
+	showObject(Game_end);
 
 	//설명 때의 물체
 	mario_party_next = createObject("Images/Next.png");
-	locateObject(mario_party_next, mario_game_description, 500, 30);
+	locateObject(mario_party_next, mario_game_description, 540, 80);
 	showObject(mario_party_next);
 
 	//게임판에서의 물체
@@ -1261,20 +1443,6 @@ int main() {
 
 	drawing_card_escape_timer = createTimer(3.f);
 
-	//임시 실험용 back
-	back2 = createObject("Images/back.png");
-	locateObject(back2, temp_stage_1_2, 200, 100);
-	showObject(back2);
-	back4 = createObject("Images/back.png");
-	locateObject(back4, temp_stage_1_4, 200, 100);
-	showObject(back4);
-	back6 = createObject("Images/back.png");
-	locateObject(back6, temp_stage_2_2, 200, 100);
-	showObject(back6);
-	back9 = createObject("Images/back.png");
-	locateObject(back9, temp_stage_3_1, 200, 100);
-	showObject(back9);
-
 	//1-1스테이지에 사용하는 이미지들
 	pmdescription = createScene("설명", "pm_game_Images/game_background.png");
 
@@ -1295,7 +1463,37 @@ int main() {
 	pm_timer3 = createTimer(5.f);
 	pm_enter_final = createTimer(1.f);
 	pm_enter_game_board_timer = createTimer(5.f);
-	// 여기까지 1-1 스테이지 에 나오는 이미지 및 타이머 
+	// 여기까지 1-1 스테이지에 나오는 이미지 및 타이머 
+
+	//여기부터 1-2 스테이지에 나오는 이미지 및 타이머
+	scene_running_explain = createScene("게임설명", "running_game_Images/런닝겜설명.png");
+	scene_running_playground = createScene("scene1", "running_game_Images/육상경기장.png");
+	scene_running_end = createScene("겜끝", "running_game_Images/일다시이.png");
+	//런 캐릭터//
+	pitch1_running = createObject("running_game_Images/pitch1.png");
+	locateObject(pitch1_running, scene_running_playground, pitch1X, pitch1Y);
+	showObject(pitch1_running);
+	mario1_running = createObject("running_game_Images/mario1.png");
+	locateObject(mario1_running, scene_running_playground, mario1X, mario1Y);
+	showObject(mario1_running);
+	mush1_running = createObject("running_game_Images/mush1.png");
+	locateObject(mush1_running, scene_running_playground, mush1X, mush1Y);
+	showObject(mush1_running);
+	startbutton_running = createObject("running_game_Images/startbutton.png");
+	locateObject(startbutton_running, scene_running_explain, 600, 0);
+	showObject(startbutton_running);
+	running_game_escape_timer = createTimer(3.f);
+	//여기까지 1-2스테이지에 나오는 이미지 및 타이머
+	
+	//여기부터 1-4 스테이지에 나오는 이미지 및 타이머
+	puzzle_game_scene1 = createScene("퍼즐 맞추기", "puzzle_game_Images/B.png");
+	puzzle_game_next = createObject("puzzle_game_Images/next.png");
+	locateObject(puzzle_game_next, puzzle_game_scene1, 500, 50);
+	scaleObject(puzzle_game_next, 0.15f);
+	showObject(puzzle_game_next);
+	puzzle_game_setS();
+	puzzle_game_escape_timer = createTimer(3.f);
+	//여기까지 1-4스테이지에 나오는 이미지 및 타이머
 
 	//2-1 스테이지의 카드맞추기 함수에 사용되는 이미지들
 	card_match_card_description = createScene("카드 설명", "card_match_Images/설명.png");
@@ -1316,6 +1514,34 @@ int main() {
 	card_match_show_timer = createTimer(1.f);
 	card_match_escape_timer = createTimer(3.f);
 	// 여기까지 카드맞추기 사용하는 이미지와 타이머
+
+	// 여기부터 2-2 스테이지에 사용하는 이미지와 타이머
+
+	scene_escape_playground = createScene("scene1", "escaping_game_Images/배경1.png");
+	scene_escape_explain = createScene("피하기겜설명", "escaping_game_Images/피하기겜설명.png");
+	scene_escape_end = createScene("피하기겜끝", "escaping_game_Images/이다시이.png");
+
+	player1_escape = createObject("escaping_game_Images/player1.png");
+	locateObject(player1_escape, scene_escape_playground, 600, 0);
+	showObject(player1_escape);
+	player2_escape = createObject("escaping_game_Images/player2.png");
+	locateObject(player2_escape, scene_escape_playground, 300, 0);
+	showObject(player2_escape);
+	player3_escape = createObject("escaping_game_Images/player3.png");
+	locateObject(player3_escape, scene_escape_playground, 900, 0);
+	showObject(player3_escape);
+
+	startbutton_escape = createObject("escaping_game_Images/startbutton_escape.png");
+	locateObject(startbutton_escape, scene_escape_explain, 600, 0);
+	showObject(startbutton_escape);
+
+	timer1_escape = createTimer(0.01f);
+	timer2_escape = createTimer(0.01f);
+	timer3_escape = createTimer(0.01f);
+
+	escaping_game_escape_timer = createTimer(3.f);
+
+	//여기까지 2-2 스테이지에 사용하는 이미지와 타이머
 
 	//2-4 슬롯머신에 사용하는 이미지와 타이머
 	slot_game_slot_description = createScene("설명", "slot_game_Images/설명.png");
@@ -1356,6 +1582,19 @@ int main() {
 	slot_game_escape_timer = createTimer(3.f);
 
 	//여기까지 2-4 이미지와 타이머
+
+	//여기부터 3-1 이미지와 타이머
+	maze_game_scene1 = createScene("Maze", "maze_game_Images/B.png");
+
+	maze_game_next = createObject("maze_game_Images/next.png");
+
+	scaleObject(maze_game_next, 0.1f);
+	locateObject(maze_game_next, maze_game_scene1, 1100, 20);
+	showObject(maze_game_next);
+	
+	maze_game_timer1 = createTimer(0.01f);
+	maze_game_escape_timer = createTimer(3.f);
+	//여기까지 3-1 이미지와 타이머
 
 	//여기부터 3-2 이미지와 타이머
 	find_game_scene1 = createScene("Find Game", "find_game_Images/B.png");
@@ -1938,8 +2177,307 @@ void timerCallback_pm_game(TimerID timer) {
 		}
 	}
 }
+// 여기까지 1-1 함수 동작 기능
 
-// 카드 맞추기에 사용되는 함수 동작 기능
+//1-2 스테이지에 사용하는 함수 동작기능
+void mouseCallback_running_game(ObjectID object, int x, int y, MouseAction action) {
+	if (stage_1_2 == true) {
+		if (object == startbutton_running) {
+			enterScene(scene_running_playground);
+			hideObject(startbutton_running);
+		}
+	}
+}
+
+void keyboardCallback_running_game(KeyCode code, KeyState state)
+{
+	if (stage_1_2 == true) {
+		if (code == KeyCode::KEY_DOWN_ARROW) {      // DOWN
+			mario1X = mario1X + 30;
+			locateObject(mario1_running, scene_running_playground, mario1X, mario1Y);
+			if (mario1X > 1280) {
+				mario1X = 0;
+				pitch1X = 0;
+				mush1X = 0;
+				enterScene(scene_running_end);
+				showMessage("우승자는 player1! 5점 추가");
+				mario_party_player1_score += 5;
+				startTimer(running_game_escape_timer);
+			}
+		}
+		else if (code == KeyCode::KEY_RIGHT_ARROW) {      // RIGHT
+			pitch1X = pitch1X + 30;
+			locateObject(pitch1_running, scene_running_playground, pitch1X, pitch1Y);
+			if (pitch1X > 1280) {
+				mario1X = 0;
+				pitch1X = 0;
+				mush1X = 0;
+				enterScene(scene_running_end);
+				showMessage("우승자는 player2! 5점 추가");
+				mario_party_player2_score += 5;
+				startTimer(running_game_escape_timer);
+			}
+		}
+		else if (code == KeyCode::KEY_LEFT_ARROW) {      // LEFT
+			mush1X = mush1X + 30;
+			locateObject(mush1_running, scene_running_playground, mush1X, mush1Y);
+			if (mush1X > 1280) {
+				mario1X = 0;
+				pitch1X = 0;
+				mush1X = 0;
+				enterScene(scene_running_end);
+				showMessage("우승자는 player3! 5점 추가");
+				mario_party_player3_score += 5;
+				startTimer(running_game_escape_timer);
+			}
+		}
+	}
+}
+
+void timerCallback_running_game(TimerID timer) {
+	if (timer == running_game_escape_timer) {
+		stage_1_2 = false;
+		stage_1_2_finish = true;
+		in_game_board = true;
+		enterScene(game_board);
+		showObject(run_dice);
+		showObject(startbutton_running);
+		setTimer(running_game_escape_timer, 3.f);
+		change_player();
+		check_player_score();
+	}
+}
+//여기까지 1-2 스테이지 함수 동작 기능
+
+//여기부터 1-4 스테이지 함수 동작 기능
+void puzzle_game_setS() {
+	puzzle_game_s[1] = createObject("puzzle_game_Images/1.jpg");
+	puzzle_game_s[2] = createObject("puzzle_game_Images/2.jpg");
+	puzzle_game_s[3] = createObject("puzzle_game_Images/3.jpg");
+	puzzle_game_s[4] = createObject("puzzle_game_Images/4.jpg");
+	puzzle_game_s[5] = createObject("puzzle_game_Images/5.jpg");
+	puzzle_game_s[6] = createObject("puzzle_game_Images/6.jpg");
+	puzzle_game_s[7] = createObject("puzzle_game_Images/7.jpg");
+	puzzle_game_s[8] = createObject("puzzle_game_Images/8.jpg");
+	puzzle_game_s[9] = createObject("puzzle_game_Images/9.png");
+}
+
+void puzzle_game_move1(int num1, int x1, int y1, int x2, int y2) {
+	puzzle_game_YX[y2][x2] = num1;
+	puzzle_game_YX[y1][x1] = 9;
+	locateObject(puzzle_game_s[num1], puzzle_game_scene1, puzzle_game_X[x2], puzzle_game_Y[y2]);
+	locateObject(puzzle_game_s[9], puzzle_game_scene1, puzzle_game_X[x1], puzzle_game_Y[y1]);
+}
+
+void puzzle_game_move2(int x1, int y1, int x2, int y2) {
+	puzzle_game_YX[y1][x1] = puzzle_game_YX[y2][x2];
+	puzzle_game_YX[y2][x2] = 9;
+	locateObject(puzzle_game_s[puzzle_game_YX[y1][x1]], puzzle_game_scene1, puzzle_game_X[x1], puzzle_game_Y[y1]);
+	locateObject(puzzle_game_s[9], puzzle_game_scene1, puzzle_game_X[x2], puzzle_game_Y[y2]);
+}
+
+void puzzle_game_moveS(int num) {
+	for (int i = 1; i <= 3; i++) {
+		for (int j = 1; j <= 3; j++) {
+			if (puzzle_game_YX[i][j] == num) {
+				puzzle_game_cy = i;
+				puzzle_game_cx = j;
+			}
+		}
+	}
+	if (puzzle_game_YX[puzzle_game_cy - 1][puzzle_game_cx] == 9) {
+		puzzle_game_move1(num, puzzle_game_cx, puzzle_game_cy, puzzle_game_cx, puzzle_game_cy - 1);
+	}
+	else if (puzzle_game_YX[puzzle_game_cy + 1][puzzle_game_cx] == 9) {
+		puzzle_game_move1(num, puzzle_game_cx, puzzle_game_cy, puzzle_game_cx, puzzle_game_cy + 1);
+	}
+	else if (puzzle_game_YX[puzzle_game_cy][puzzle_game_cx + 1] == 9) {
+		puzzle_game_move1(num, puzzle_game_cx, puzzle_game_cy, puzzle_game_cx + 1, puzzle_game_cy);
+	}
+	else if (puzzle_game_YX[puzzle_game_cy][puzzle_game_cx - 1] == 9) {
+		puzzle_game_move1(num, puzzle_game_cx, puzzle_game_cy, puzzle_game_cx - 1, puzzle_game_cy);
+	}
+}
+
+void puzzle_game_arrangeS() {
+	for (int i = 1; i <= 3; i++) {
+		for (int j = 1; j <= 3; j++) {
+			locateObject(puzzle_game_s[puzzle_game_YX[i][j]], puzzle_game_scene1, puzzle_game_X[j], puzzle_game_Y[i]);
+			showObject(puzzle_game_s[puzzle_game_YX[i][j]]);
+		}
+	}
+	for (int i = 0; i <= puzzle_game_dif; i++) {
+		puzzle_game_r_num = rand() % 4;
+		if (puzzle_game_r_num == 0) {
+			if (puzzle_game_YX[puzzle_game_y0 - 1][puzzle_game_x0] > 0) {
+				puzzle_game_move2(puzzle_game_x0, puzzle_game_y0, puzzle_game_x0, puzzle_game_y0 - 1);
+				puzzle_game_y0--;
+			}
+			else {
+				i--;
+			}
+		}
+		else if (puzzle_game_r_num == 1) {
+			if (puzzle_game_YX[puzzle_game_y0][puzzle_game_x0 + 1] > 0) {
+				puzzle_game_move2(puzzle_game_x0, puzzle_game_y0, puzzle_game_x0 + 1, puzzle_game_y0);
+				puzzle_game_x0++;
+			}
+			else {
+				i--;
+			}
+		}
+		else if (puzzle_game_r_num == 2) {
+			if (puzzle_game_YX[puzzle_game_y0][puzzle_game_x0 - 1] > 0) {
+				puzzle_game_move2(puzzle_game_x0, puzzle_game_y0, puzzle_game_x0 - 1, puzzle_game_y0);
+				puzzle_game_x0--;
+			}
+			else {
+				i--;
+			}
+		}
+		else {
+			if (puzzle_game_YX[puzzle_game_y0 + 1][puzzle_game_x0] > 0) {
+				puzzle_game_move2(puzzle_game_x0, puzzle_game_y0, puzzle_game_x0, puzzle_game_y0 + 1);
+				puzzle_game_y0++;
+			}
+			else {
+				i--;
+			}
+		}
+	}
+}
+
+void mouseCallback_puzzle_game(ObjectID object, int x, int y, MouseAction action) {
+	if (stage_1_4 == true) {
+		if (object == puzzle_game_next) {
+			for (int i = 1; i <= 3; i++) {
+				for (int j = 1; j <= 3; j++) {
+					puzzle_game_YX[i][j] = puzzle_game_snum;
+					puzzle_game_snum++;
+				}
+			}
+			setSceneImage(puzzle_game_scene1, "puzzle_game_Images/background.png");
+			puzzle_game_x0 = 3;
+			puzzle_game_y0 = 3;
+			puzzle_game_t = 0;
+			puzzle_game_timer1 = createTimer(1.0f);
+			puzzle_game_timer2 = createTimer(puzzle_game_t);
+			showTimer(puzzle_game_timer2);
+			startTimer(puzzle_game_timer1);
+			hideObject(puzzle_game_next);
+			puzzle_game_arrangeS();
+		}
+		for (int k = 1; k <= 8; k++) {
+			if (object == puzzle_game_s[k]) {
+				puzzle_game_moveS(k);
+			}
+		}
+		for (int i = 1; i <= 3; i++) {
+			for (int j = 1; j <= 3; j++) {
+				if (puzzle_game_YX[i][j] == puzzle_game_snum) {
+					puzzle_game_success++;
+				}
+				puzzle_game_snum++;
+			}
+		}
+		if (puzzle_game_success >= 9) {
+			stopTimer(puzzle_game_timer1);
+			showMessage("다음 플레이어 차례");
+			showObject(puzzle_game_next);
+			for (int i = 1; i <= 9; i++) {
+				hideObject(puzzle_game_s[i]);
+			}
+			if (puzzle_game_pT == 1) puzzle_game_t1 = puzzle_game_t;
+			else if (puzzle_game_pT == 2) puzzle_game_t2 = puzzle_game_t;
+			else if (puzzle_game_pT == 3) {
+				puzzle_game_t3 = puzzle_game_t;
+				char text[100];
+				sprintf_s(text, 100, "player 1 : %.2f player 2 : %.2f player 3 : %.2f", puzzle_game_t1, puzzle_game_t2, puzzle_game_t3);
+				showMessage(text);
+				float puzzle_game_score[3] = { puzzle_game_t1, puzzle_game_t2, puzzle_game_t3 };
+				int m = puzzle_game_score[0];
+				for (int i = 0; i <= 1; i++) if (puzzle_game_score[i] > puzzle_game_score[i + 1]) m = puzzle_game_score[i + 1];
+				for (int i = 0; i <= 2; i++) {
+					if (puzzle_game_score[i] == m) {
+						if (i == 0) {
+							if (puzzle_game_score[1] < puzzle_game_score[2]) {
+								mario_party_player1_score += 5;
+								mario_party_player2_score += 3;
+								mario_party_player3_score += 1;
+								startTimer(puzzle_game_escape_timer);
+							}
+							else if (puzzle_game_score[1] > puzzle_game_score[2]) {
+								mario_party_player1_score += 5;
+								mario_party_player2_score += 1;
+								mario_party_player3_score += 3;
+								startTimer(puzzle_game_escape_timer);
+							}
+						}
+						else if (i == 1) {
+							if (puzzle_game_score[0] < puzzle_game_score[2]) {
+								mario_party_player1_score += 3;
+								mario_party_player2_score += 5;
+								mario_party_player3_score += 1;
+								startTimer(puzzle_game_escape_timer);
+							}
+							else if (puzzle_game_score[0] > puzzle_game_score[2]) {
+								mario_party_player1_score += 1;
+								mario_party_player2_score += 5;
+								mario_party_player3_score += 3;
+								startTimer(puzzle_game_escape_timer);
+							}
+						}
+						else if (i == 2) {
+							if (puzzle_game_score[0] < puzzle_game_score[1]) {
+								mario_party_player1_score += 3;
+								mario_party_player2_score += 1;
+								mario_party_player3_score += 5;
+								startTimer(puzzle_game_escape_timer);
+							}
+							else if (puzzle_game_score[0] > puzzle_game_score[1]) {
+								mario_party_player1_score += 1;
+								mario_party_player2_score += 3;
+								mario_party_player3_score += 5;
+								startTimer(puzzle_game_escape_timer);
+							}
+						}
+					}
+				}
+				hideObject(puzzle_game_next);
+				setSceneImage(puzzle_game_scene1, "puzzle_game_Images/end.png");
+				hideTimer();
+				startTimer(puzzle_game_escape_timer);
+			}
+			puzzle_game_pT++;
+		}
+		puzzle_game_snum = 1;
+		puzzle_game_success = 0;
+	}
+}
+
+void timerCallback_puzzle_game(TimerID timer) {
+	if (stage_1_4 == true) {
+		if (timer == puzzle_game_timer1) {
+			puzzle_game_t++;
+			setTimer(puzzle_game_timer1, 1.0f);
+			startTimer(puzzle_game_timer1);
+			setTimer(puzzle_game_timer2, puzzle_game_t);
+		}
+		if (timer == puzzle_game_escape_timer) {
+			stage_1_4 = false;
+			stage_1_4_finish = true;
+			in_game_board = true;
+			enterScene(game_board);
+			showObject(run_dice);
+			setTimer(puzzle_game_escape_timer, 3.f);
+			change_player();
+			check_player_score();
+		}
+	}
+}
+//여기까지 1-4 퍼즐맞추기 함수 동작 기능
+
+// 2-1 카드 맞추기에 사용되는 함수 동작 기능
 void create_card() {
 	char buff[100];
 	for (int i = 0; i < 10; i++) {
@@ -2275,6 +2813,205 @@ void timerCallback_card_match(TimerID timer) {
 	}
 }
 //여기까지 카드 맞추기 함수
+
+//2-2 스테이지 함수 동작 기능
+void escaping_game_createFoes() {
+	char buf[50];
+	for (int i = 0; i < 100; i++) {
+		sprintf(buf, "escaping_game_Images/box1.png");
+		foesX[i] = rand() % 1280;
+		foesY[i] = (rand() % 100) * i + 720;
+		foesSize[i] = 1.f / (rand() % 10 + 1);
+		foes[i] = createObject(buf);
+		locateObject(foes[i], scene_escape_playground, foesX[i], foesY[i]);
+		scaleObject(foes[i], foesSize[i]);
+		showObject(foes[i]);
+	}
+}
+
+void escaping_game_foesmove() {
+	for (int i = 0; i < 100; i++) {
+		foesY[i] -= foesspeed;
+		locateObject(foes[i], scene_escape_playground, foesX[i], foesY[i]);
+		if (foesY[i] < -200 * foesSize[i]) {
+			score_escape++;
+			foesspeed = score_escape / 100 + 1;
+			foesX[i] = rand() % 1280;
+			foesY[i] = (rand() % (1000 - score_escape)) + 1000;
+			foesSize[i] = 1.f / (rand() % 10 + 1);
+			locateObject(foes[i], scene_escape_playground, foesX[i], foesY[i]);
+		}
+	}
+}
+
+bool escaping_game_pointInRect(int x, int y, int rx, int ry, int size) {
+	if (x < rx) return false;
+	if (x > rx + size) return false;
+	if (y < ry) return false;
+	if (y > ry + size) return false;
+	return true;
+}
+
+bool escaping_game_pointInRect1(int x1, int y1, int rx1, int ry1, int size) {
+	if (x1 < rx1) return false;
+	if (x1 > rx1 + size) return false;
+	if (y1 < ry1) return false;
+	if (y1 > ry1 + size) return false;
+	return true;
+}
+
+bool escaping_game_pointInRect2(int x2, int y2, int rx2, int ry2, int size) {
+	if (x2 < rx2) return false;
+	if (x2 > rx2 + size) return false;
+	if (y2 < ry2) return false;
+	if (y2 > ry2 + size) return false;
+	return true;
+}
+
+bool escaping_game_collided(int x, int y, int rx, int ry, int size) {
+	return escaping_game_pointInRect(x + 10, y + 20, rx, ry, size)
+		|| escaping_game_pointInRect(x + 40, y + 20, rx, ry, size)
+		|| escaping_game_pointInRect(x + 25, y + 45, rx, ry, size);
+}
+
+bool escaping_game_collided2(int x1, int y1, int rx1, int ry1, int size) {
+	return escaping_game_pointInRect(x1 + 10, y1 + 20, rx1, ry1, size)
+		|| escaping_game_pointInRect(x1 + 40, y1 + 20, rx1, ry1, size)
+		|| escaping_game_pointInRect(x1 + 25, y1 + 45, rx1, ry1, size);
+}
+
+bool escaping_game_collided3(int x2, int y2, int rx2, int ry2, int size) {
+	return escaping_game_pointInRect(x2 + 10, y2 + 20, rx2, ry2, size)
+		|| escaping_game_pointInRect(x2 + 40, y2 + 20, rx2, ry2, size)
+		|| escaping_game_pointInRect(x2 + 25, y2 + 45, rx2, ry2, size);
+}
+
+bool escaping_game_checkCollision() {
+	for (int i = 0; i < 100; i++) {
+		if (escaping_game_collided(x_escape, 0, foesX[i], foesY[i], foesSize[i] * 200)) return true;
+	}
+	return false;
+}
+
+bool escaping_game_checkCollision1() {
+	for (int i = 0; i < 100; i++) {
+		if (escaping_game_collided(x1_escape, 0, foesX[i], foesY[i], foesSize[i] * 200)) return true;
+	}
+	return false;
+}
+
+bool escaping_game_checkCollision2() {
+	for (int i = 0; i < 100; i++) {
+		if (escaping_game_collided(x2_escape, 0, foesX[i], foesY[i], foesSize[i] * 200)) return true;
+	}
+	return false;
+}
+
+void keyboardCallback_escaping_game(KeyCode code, KeyState state) {
+	if (stage_2_2 == true) {
+		if (state == KeyState::KEY_PRESSED) {
+			if (code == KeyCode::KEY_LEFT_ARROW) speed_escape--;
+			else if (code == KeyCode::KEY_RIGHT_ARROW)speed_escape++;
+			else if (code == KeyCode::KEY_DOWN_ARROW) speed1_escape--;
+			else if (code == KeyCode::KEY_UP_ARROW)speed1_escape++;
+			else if (code == KeyCode::KEY_F5) speed2_escape--;
+			else if (code == KeyCode::KEY_F6)speed2_escape++;
+		}
+	}
+}
+
+void escaping_game_player1move() {
+	x_escape += speed_escape;
+	if (x_escape < 0) x_escape = 0;
+	if (x_escape > 1230) x_escape = 1230;
+	locateObject(player1_escape, scene_escape_playground, x_escape, 0);
+}
+
+void escaping_game_player2move() {
+	x1_escape += speed1_escape;
+	if (x1_escape < 0) x1_escape = 0;
+	if (x1_escape > 1230) x1_escape = 1230;
+	locateObject(player2_escape, scene_escape_playground, x1_escape, 0);
+}
+
+void escaping_game_player3move() {
+	x2_escape += speed2_escape;
+	if (x2_escape < 0) x2_escape = 0;
+	if (x2_escape > 1230) x2_escape = 1230;
+	locateObject(player3_escape, scene_escape_playground, x2_escape, 0);
+}
+
+void mouseCallback_escaping_game(ObjectID object, int x, int y, MouseAction action) {
+	if (stage_2_2 == true) {
+		if (object == startbutton_escape) {
+			enterScene(scene_escape_playground);
+			hideObject(startbutton_escape);
+			escaping_game_createFoes();
+			startTimer(timer1_escape);
+			startTimer(timer2_escape);
+			startTimer(timer3_escape);
+		}
+	}
+}
+
+void timerCallback_escaping_game(TimerID timer) {
+	if (stage_2_2 == true) {
+		if (timer == timer1_escape) {
+			escaping_game_player1move();
+			escaping_game_foesmove();
+			if (escaping_game_checkCollision()) {
+				enterScene(scene_escape_end);
+				char buf[256];
+				sprintf(buf, "꼴찌는 player1\n피한 박스수: %d\n 감점", score_escape);
+				mario_party_player1_score -= 5;
+				showMessage(buf);
+				stage_2_2 = false;
+				startTimer(escaping_game_escape_timer);
+			}
+			setTimer(timer1_escape, 0.01f);
+			startTimer(timer1_escape);
+		}
+		if (timer == timer1_escape) {
+			escaping_game_player2move();
+			escaping_game_foesmove();
+			if (escaping_game_checkCollision1()) {
+				enterScene(scene_escape_end);
+				char buf[256];
+				sprintf(buf, "꼴찌는 player2\n피한 박스수: %d\n 감점", score_escape);
+				mario_party_player2_score -= 5;
+				showMessage(buf);
+				stage_2_2 = false;
+				startTimer(escaping_game_escape_timer);
+			}
+			setTimer(timer2_escape, 0.01f);
+			startTimer(timer2_escape);
+		}
+		if (timer == timer3_escape) {
+			escaping_game_player3move();
+			escaping_game_foesmove();
+			if (escaping_game_checkCollision2()) {
+				enterScene(scene_escape_end);
+				char buf[256];
+				sprintf(buf, "꼴찌는 player3\n피한 박스수: %d\n 감점", score_escape);
+				mario_party_player3_score -= 5;
+				showMessage(buf);
+				stage_2_2 = false;
+				startTimer(escaping_game_escape_timer);
+			}
+			setTimer(timer3_escape, 0.01f);
+			startTimer(timer3_escape);
+		}
+	}
+	if (timer == escaping_game_escape_timer) {
+		enterScene(game_board);
+		in_game_board = true;
+		stage_2_2_finish = true;
+		showObject(run_dice);
+		change_player();
+		check_player_score();
+	}
+}
+//여기까지 2-2 함수 동작 기능
 
 //여기부터 2-4스테이지 함수 동작기능
 void slot_game_create_slot_Image() {
@@ -2617,6 +3354,7 @@ void timerCallback_slot_game(TimerID timer) {
 				setTimer(slot_game_escape_timer, 3.f);
 				enterScene(game_board);
 				stage_2_4 = false;
+				stage_2_4_finish = true;
 				in_game_board = true;
 				slot_game_game_reset();
 				showObject(run_dice);
@@ -2627,6 +3365,293 @@ void timerCallback_slot_game(TimerID timer) {
 	}
 }
 //여기까지 2-4스테이지 함수 동작 기능
+
+//여기부터 3-1스테이지 함수 동작 기능
+int maze_game_direction(int dx, int dy) {
+	if (dx > 0 && dy > 0) return 2;
+	else if (dx > 0 && dy < 0) return 4;
+	else if (dx < 0 && dy > 0) return 8;
+	else if (dx < 0 && dy < 0) return 6;
+	else if (dy > 0 && dx == 0) return 1;
+	else if (dx > 0 && dy == 0) return 3;
+	else if (dy < 0 && dx == 0) return 5;
+	else if (dx < 0 && dy == 0) return 7;
+}
+
+void maze_game_backmove(float* x, float* y, int dir) {
+	if (dir == 1) {
+		*y -= maze_game_bm;
+	}
+	else if (dir == 2) {
+		*x -= maze_game_bm;
+		*y -= maze_game_bm;
+	}
+	else if (dir == 3) {
+		*x -= maze_game_bm;
+	}
+	else if (dir == 4) {
+		*x -= maze_game_bm;
+		*y += maze_game_bm;
+	}
+	else if (dir == 5) {
+		*y += maze_game_bm;
+	}
+	else if (dir == 6) {
+		*x += maze_game_bm;
+		*y += maze_game_bm;
+	}
+	else if (dir == 7) {
+		*x += maze_game_bm;
+	}
+	else if (dir == 8) {
+		*x += maze_game_bm;
+		*y -= maze_game_bm;
+	}
+}
+
+void maze_game_isBlocked(ObjectID object, int x, int y, int dir) {
+	if (maze_game_block[17 - (y / 40)][x / 40] == 1) {
+		if (object == maze_game_p1) {
+			maze_game_backmove(&maze_game_p1x, &maze_game_p1y, dir);
+		}
+		else if (object == maze_game_p2) {
+			maze_game_backmove(&maze_game_p2x, &maze_game_p2y, dir);
+		}
+		else if (object == maze_game_p3) {
+			maze_game_backmove(&maze_game_p3x, &maze_game_p3y, dir);
+		}
+		else if (object == maze_game_M) {
+			maze_game_backmove(&maze_game_MX, &maze_game_MY, dir);
+		}
+	}
+	else if (maze_game_block[17 - (y / 40)][x / 40] == 2) { 
+		if (object == maze_game_p1) {
+			showMessage("1번 플레이어 우승");
+			mario_party_player1_score += 10;
+		}
+		if (object == maze_game_p2) {
+			showMessage("2번 플레이어 우승");
+			mario_party_player2_score += 10;
+		}
+		if (object == maze_game_p3) {
+			showMessage("3번 플레이어 우승");
+			mario_party_player3_score += 10;
+		}
+		setSceneImage(maze_game_scene1, "maze_game_Images/end.png");
+		hideObject(maze_game_light);
+		hideObject(maze_game_M);
+		hideObject(maze_game_p1);
+		hideObject(maze_game_p2);
+		hideObject(maze_game_p3);
+		maze_game_block[8][27] = 0;
+		maze_game_block[8][28] = 0;
+		maze_game_block[8][29] = 0;
+		maze_game_block[9][27] = 0;
+		maze_game_block[9][28] = 0;
+		maze_game_block[9][29] = 0;
+		stage_3_1_finish = true;
+		startTimer(maze_game_escape_timer);
+		////여기서 끝
+	}
+}
+
+void maze_game_checkBlock(ObjectID object, int x, int y, int dir, int size) {
+	maze_game_isBlocked(object, x, y, dir);
+	maze_game_isBlocked(object, x + size, y, dir);
+	maze_game_isBlocked(object, x, y + size, dir);
+	maze_game_isBlocked(object, x + size, y + size, dir);
+}
+
+void maze_game_setImageD(ObjectID object1, int id, int dir) {
+	char maze_game_pim[40];
+	if (dir == 1) {
+		sprintf_s(maze_game_pim, 40, "maze_game_Images/%dU.png", id);
+		setObjectImage(object1, maze_game_pim);
+	}
+	else if (dir == 2) {
+		sprintf_s(maze_game_pim, 40, "maze_game_Images/%dRU.png", id);
+		setObjectImage(object1, maze_game_pim);
+	}
+	else if (dir == 3) {
+		sprintf_s(maze_game_pim, 40, "maze_game_Images/%dR.png", id);
+		setObjectImage(object1, maze_game_pim);
+	}
+	else if (dir == 4) {
+		sprintf_s(maze_game_pim, 40, "maze_game_Images/%dRD.png", id);
+		setObjectImage(object1, maze_game_pim);
+	}
+	else if (dir == 5) {
+		sprintf_s(maze_game_pim, 40, "maze_game_Images/%dD.png", id);
+		setObjectImage(object1, maze_game_pim);
+	}
+	else if (dir == 6) {
+		sprintf_s(maze_game_pim, 40, "maze_game_Images/%dLD.png", id);
+		setObjectImage(object1, maze_game_pim);
+	}
+	else if (dir == 7) {
+		sprintf_s(maze_game_pim, 40, "maze_game_Images/%dL.png", id);
+		setObjectImage(object1, maze_game_pim);
+	}
+	else if (dir == 8) {
+		sprintf_s(maze_game_pim, 40, "maze_game_Images/%dLU.png", id);
+		setObjectImage(object1, maze_game_pim);
+	}
+}
+
+void timerCallback_maze_game(TimerID timer) {
+	if (stage_3_1 == true) {
+		if (timer == maze_game_timer1) {
+			maze_game_p1x += maze_game_p1dx;
+			maze_game_p1y += maze_game_p1dy;
+			maze_game_p2x += maze_game_p2dx;
+			maze_game_p2y += maze_game_p2dy;
+			maze_game_p3x += maze_game_p3dx;
+			maze_game_p3y += maze_game_p3dy;
+			maze_game_t += 0.01;
+			maze_game_checkBlock(maze_game_p2, maze_game_p2x, maze_game_p2y, maze_game_direction(maze_game_p2dx, maze_game_p2dy), 24);
+			maze_game_checkBlock(maze_game_p1, maze_game_p1x, maze_game_p1y, maze_game_direction(maze_game_p1dx, maze_game_p1dy), 24);
+			maze_game_checkBlock(maze_game_p3, maze_game_p3x, maze_game_p3y, maze_game_direction(maze_game_p3dx, maze_game_p3dy), 24);
+			maze_game_setImageD(maze_game_p2, 2, maze_game_direction(maze_game_p2dx, maze_game_p2dy));
+			maze_game_setImageD(maze_game_p1, 1, maze_game_direction(maze_game_p1dx, maze_game_p1dy));
+			maze_game_setImageD(maze_game_p3, 3, maze_game_direction(maze_game_p3dx, maze_game_p3dy));
+			if (maze_game_lt == 1) {
+				locateObject(maze_game_light, maze_game_scene1, maze_game_p1x - 1910, maze_game_p1y - 1070);
+				maze_game_lt++;
+			}
+			else if (maze_game_lt == 2) {
+				locateObject(maze_game_light, maze_game_scene1, maze_game_p2x - 1910, maze_game_p2y - 1070);
+				maze_game_lt++;
+			}
+			else if (maze_game_lt == 3) {
+				locateObject(maze_game_light, maze_game_scene1, maze_game_p3x - 1910, maze_game_p3y - 1070);
+				maze_game_lt = 1;
+			}
+			locateObject(maze_game_M, maze_game_scene1, maze_game_MX, maze_game_MY);
+			if (((maze_game_p1x >= maze_game_MX && maze_game_p1x <= maze_game_MX + 32) && (maze_game_p1y >= maze_game_MY && maze_game_p1y <= maze_game_MY + 32)) || ((maze_game_p1x + 24 >= maze_game_MX && maze_game_p1x + 24 <= maze_game_MX + 32) && (maze_game_p1y >= maze_game_MY && maze_game_p1y <= maze_game_MY + 32)) || ((maze_game_p1x >= maze_game_MX && maze_game_p1x <= maze_game_MX + 32) && (maze_game_p1y + 24 >= maze_game_MY && maze_game_p1y + 24 <= maze_game_MY + 32)) || ((maze_game_p1x + 24 >= maze_game_MX && maze_game_p1x + 24 <= maze_game_MX + 32) && (maze_game_p1y + 24 >= maze_game_MY && maze_game_p1y + 24 <= maze_game_MY + 32))) {
+				maze_game_p1x = maze_game_IX;
+				maze_game_p1y = maze_game_IY;
+			}
+			if (((maze_game_p2x >= maze_game_MX && maze_game_p2x <= maze_game_MX + 32) && (maze_game_p2y >= maze_game_MY && maze_game_p2y <= maze_game_MY + 32)) || ((maze_game_p2x + 24 >= maze_game_MX && maze_game_p2x + 24 <= maze_game_MX + 32) && (maze_game_p2y >= maze_game_MY && maze_game_p2y <= maze_game_MY + 32)) || ((maze_game_p2x >= maze_game_MX && maze_game_p2x <= maze_game_MX + 32) && (maze_game_p2y + 24 >= maze_game_MY && maze_game_p2y + 24 <= maze_game_MY + 32)) || ((maze_game_p2x + 24 >= maze_game_MX && maze_game_p2x + 24 <= maze_game_MX + 32) && (maze_game_p2y + 24 >= maze_game_MY && maze_game_p2y + 24 <= maze_game_MY + 32))) {
+				maze_game_p2x = maze_game_IX + 30;
+				maze_game_p2y = maze_game_IY;
+			}
+			if (((maze_game_p3x >= maze_game_MX && maze_game_p3x <= maze_game_MX + 32) && (maze_game_p3y >= maze_game_MY && maze_game_p3y <= maze_game_MY + 32)) || ((maze_game_p3x + 24 >= maze_game_MX && maze_game_p3x + 24 <= maze_game_MX + 32) && (maze_game_p3y >= maze_game_MY && maze_game_p3y <= maze_game_MY + 32)) || ((maze_game_p3x >= maze_game_MX && maze_game_p3x <= maze_game_MX + 32) && (maze_game_p3y + 24 >= maze_game_MY && maze_game_p3y + 24 <= maze_game_MY + 32)) || ((maze_game_p3x + 24 >= maze_game_MX && maze_game_p3x + 24 <= maze_game_MX + 32) && (maze_game_p3y + 24 >= maze_game_MY && maze_game_p3y + 24 <= maze_game_MY + 32))) {
+				maze_game_p3x = maze_game_IX + 60;
+				maze_game_p3y = maze_game_IY;
+			}
+			if (maze_game_t >= 0.2) {
+				maze_game_RN = rand() % 4;
+				maze_game_t = 0;
+			}
+			if (maze_game_RN == 0) {
+				maze_game_MY += maze_game_speed;
+				maze_game_checkBlock(maze_game_M, maze_game_MX, maze_game_MY, 1, 32);
+				setObjectImage(maze_game_M, "maze_game_Images/4U.png");
+			}
+			else if (maze_game_RN == 1) {
+				maze_game_MX += maze_game_speed;
+				maze_game_checkBlock(maze_game_M, maze_game_MX, maze_game_MY, 3, 32);
+				setObjectImage(maze_game_M, "maze_game_Images/4R.png");
+			}
+			else if (maze_game_RN == 2) {
+				maze_game_MX -= maze_game_speed;
+				maze_game_checkBlock(maze_game_M, maze_game_MX, maze_game_MY, 7, 32);
+				setObjectImage(maze_game_M, "maze_game_Images/4L.png");
+			}
+			else if (maze_game_RN == 3) {
+				maze_game_MY -= maze_game_speed;
+				maze_game_checkBlock(maze_game_M, maze_game_MX, maze_game_MY, 5, 32);
+				setObjectImage(maze_game_M, "maze_game_Images/4D.png");
+			}
+			locateObject(maze_game_p1, maze_game_scene1, maze_game_p1x, maze_game_p1y);
+			locateObject(maze_game_p2, maze_game_scene1, maze_game_p2x, maze_game_p2y);
+			locateObject(maze_game_p3, maze_game_scene1, maze_game_p3x, maze_game_p3y);
+			setTimer(maze_game_timer1, 0.01f);
+			startTimer(maze_game_timer1);
+		}
+		if (timer == maze_game_escape_timer) {
+			setTimer(maze_game_escape_timer, 3.f);
+			enterScene(game_board);
+			stage_3_1 = false;
+			in_game_board = true;
+			showObject(run_dice);
+			change_player();
+			check_player_score();
+		}
+	}
+}
+
+void keyboardCallback_maze_game(KeyCode code, KeyState state)
+{
+	if (stage_3_1 == true) {
+		if (code == KeyCode::KEY_D) {
+			maze_game_p1dx += (state == KeyState::KEY_PRESSED ? maze_game_speed : -maze_game_speed);
+		}
+		else if (code == KeyCode::KEY_A) {
+			maze_game_p1dx -= (state == KeyState::KEY_PRESSED ? maze_game_speed : -maze_game_speed);
+		}
+		else if (code == KeyCode::KEY_W) {
+			maze_game_p1dy += (state == KeyState::KEY_PRESSED ? maze_game_speed : -maze_game_speed);
+		}
+		else if (code == KeyCode::KEY_S) {
+			maze_game_p1dy -= (state == KeyState::KEY_PRESSED ? maze_game_speed : -maze_game_speed);
+		}
+
+		if (code == KeyCode::KEY_L) {
+			maze_game_p2dx += (state == KeyState::KEY_PRESSED ? maze_game_speed : -maze_game_speed);
+		}
+		else if (code == KeyCode::KEY_J) {
+			maze_game_p2dx -= (state == KeyState::KEY_PRESSED ? maze_game_speed : -maze_game_speed);
+		}
+		else if (code == KeyCode::KEY_I) {
+			maze_game_p2dy += (state == KeyState::KEY_PRESSED ? maze_game_speed : -maze_game_speed);
+		}
+		else if (code == KeyCode::KEY_K) {
+			maze_game_p2dy -= (state == KeyState::KEY_PRESSED ? maze_game_speed : -maze_game_speed);
+		}
+
+		if (code == KeyCode::KEY_RIGHT_ARROW) {
+			maze_game_p3dx += (state == KeyState::KEY_PRESSED ? maze_game_speed : -maze_game_speed);
+		}
+		else if (code == KeyCode::KEY_LEFT_ARROW) {
+			maze_game_p3dx -= (state == KeyState::KEY_PRESSED ? maze_game_speed : -maze_game_speed);
+		}
+		else if (code == KeyCode::KEY_UP_ARROW) {
+			maze_game_p3dy += (state == KeyState::KEY_PRESSED ? maze_game_speed : -maze_game_speed);
+		}
+		else if (code == KeyCode::KEY_DOWN_ARROW) {
+			maze_game_p3dy -= (state == KeyState::KEY_PRESSED ? maze_game_speed : -maze_game_speed);
+		}
+	}
+}
+
+void mouseCallback_maze_game(ObjectID object, int x, int y, MouseAction action) {
+	if (stage_3_1 == true) {
+		if (object == maze_game_next) {
+			maze_game_RN = rand() % 4;
+			hideObject(maze_game_next);
+			startTimer(maze_game_timer1);
+			setSceneImage(maze_game_scene1, "maze_game_Images/background.png");
+			maze_game_light = createObject("maze_game_Images/LIGHT.png");
+			maze_game_p1 = createObject("maze_game_Images/1D.png");
+			maze_game_p2 = createObject("maze_game_Images/2D.png");
+			maze_game_p3 = createObject("maze_game_Images/3D.png");
+			maze_game_M = createObject("maze_game_Images/4D.png");
+			scaleObject(maze_game_M, 0.08f);
+			showObject(maze_game_M);
+			locateObject(maze_game_M, maze_game_scene1, maze_game_MX, maze_game_MY);
+			locateObject(maze_game_light, maze_game_scene1, maze_game_p1x - 1910, maze_game_p1y - 1070);
+			scaleObject(maze_game_p2, 0.03f);
+			scaleObject(maze_game_p1, 0.03f);
+			scaleObject(maze_game_p3, 0.03f);
+			showObject(maze_game_light);
+			showObject(maze_game_p1);
+			showObject(maze_game_p2);
+			showObject(maze_game_p3);
+		}
+	}
+}
+//여기까지 3-1 스테이지 함수 동작 기능
 
 //여기부터 3-2 스테이지 함수 동작 기능
 int find_game_direction(int dx, int dy) {
@@ -3078,14 +4103,11 @@ void timerCallback_area_game(TimerID timer) {
 			}
 		}
 		if (timer == area_game_escape_timer) {
-			area_game_reset();
-			enterScene(game_board);
+			enterScene(mario_party_final_cal);
 			stage_3_4 = false;
 			stage_3_4_finish = true;
-			in_game_board = true;
-			showObject(run_dice);
-			change_player();
-			check_player_score();
+			final_cal = true;
+			check_mario_party_winner();
 		}
 	}
 }
