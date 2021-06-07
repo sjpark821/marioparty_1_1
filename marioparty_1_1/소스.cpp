@@ -3357,6 +3357,7 @@ void timerCallback_slot_game(TimerID timer) {
 			else if (timer == slot_game_escape_timer) {
 				setTimer(slot_game_escape_timer, 3.f);
 				enterScene(game_board);
+				hideTimer();
 				stage_2_4 = false;
 				stage_2_4_finish = true;
 				in_game_board = true;
@@ -3577,6 +3578,7 @@ void timerCallback_maze_game(TimerID timer) {
 			setTimer(maze_game_escape_timer, 3.f);
 			enterScene(game_board);
 			stage_3_1 = false;
+			stage_3_1_finish = true;
 			in_game_board = true;
 			showObject(run_dice);
 			change_player();
@@ -3769,6 +3771,7 @@ void timerCallback_find_game(TimerID timer) {
 			setTimer(find_game_escape_timer, 3.f);
 			enterScene(game_board);
 			stage_3_2 = false;
+			stage_3_2_finish = true;
 			in_game_board = true;
 			showObject(run_dice);
 			change_player();
