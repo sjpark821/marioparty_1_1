@@ -2118,12 +2118,13 @@ void timerCallback_pm_game(TimerID timer) {
 	if (stage_1_1 == true) {
 		// 5초 이내에 모두 배치 안하면 0으로 계산해버리고 다음으로 넘어감
 		if (timer == pm_timer1) {
-			hideTimer();
-			enterScene(pm_2);
-			showTimer(pm_timer2);
-			startTimer(pm_timer2);
+			pm_game_simul();
 			setTimer(pm_timer1, 5.f);
 			pm_game_cal[0] = 0;
+			for (int i = 0; i < 4; i++) {
+				hideObject(pm_game_number1[i]);
+				hideObject(pm_game_number2[i]);
+			}
 			printf("%d", pm_game_cal[0]);
 		}
 		else if (timer == pm_enter_2) {
@@ -2136,12 +2137,13 @@ void timerCallback_pm_game(TimerID timer) {
 			pm_game_create();
 		}
 		else if (timer == pm_timer2) {
-			hideTimer();
-			enterScene(pm_3);
-			showTimer(pm_timer3);
-			startTimer(pm_timer3);
+			pm_game_simul_2();
 			setTimer(pm_timer2, 5.f);
 			pm_game_cal[1] = 0;
+			for (int i = 0; i < 4; i++) {
+				hideObject(pm_game_number1[i]);
+				hideObject(pm_game_number2[i]);
+			}
 		}
 		else if (timer == pm_enter_3) {
 			setTimer(pm_enter_3, 1.f);
@@ -2153,10 +2155,12 @@ void timerCallback_pm_game(TimerID timer) {
 			pm_game_create();
 		}
 		else if (timer == pm_timer3) {
-			hideTimer();
-			setTimer(pm_timer3, 5.f);
-			enterScene(pm_game_final_cal);
+			pm_game_simul_3();
 			pm_game_cal[2] = 0;
+			for (int i = 0; i < 4; i++) {
+				hideObject(pm_game_number1[i]);
+				hideObject(pm_game_number2[i]);
+			}
 		}
 		else if (timer == pm_enter_final) {
 			setTimer(pm_enter_final, 1.f);
