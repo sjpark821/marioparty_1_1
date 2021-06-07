@@ -75,12 +75,18 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <ExecutablePath>$(BANGTAL_HOME);$(ExecutablePath)</ExecutablePath>
+    <ReferencePath>$(BANGTAL_HOME);$(ReferencePath)</ReferencePath>
+    <LibraryPath>$(BANGTAL_HOME);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <ExecutablePath>$(BANGTAL_HOME);$(ExecutablePath)</ExecutablePath>
+    <ReferencePath>$(BANGTAL_HOME);$(ReferencePath)</ReferencePath>
+    <LibraryPath>$(BANGTAL_HOME);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

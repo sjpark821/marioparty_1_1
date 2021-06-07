@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.31105.61
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "marioparty_1_1", "marioparty_1_1\marioparty_1_1.vcxproj", "{9173E5F0-F0D6-47E5-A3E8-7CE78BC6F0EE}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "mario_party_1_1_installer", "mario_party_1_1_installer\mario_party_1_1_installer.vdproj", "{98448FD8-8026-4FA9-933A-B8551A5EED24}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,10 @@ Global
 		{9173E5F0-F0D6-47E5-A3E8-7CE78BC6F0EE}.Release|x64.Build.0 = Release|x64
 		{9173E5F0-F0D6-47E5-A3E8-7CE78BC6F0EE}.Release|x86.ActiveCfg = Release|Win32
 		{9173E5F0-F0D6-47E5-A3E8-7CE78BC6F0EE}.Release|x86.Build.0 = Release|Win32
+		{98448FD8-8026-4FA9-933A-B8551A5EED24}.Debug|x64.ActiveCfg = Debug
+		{98448FD8-8026-4FA9-933A-B8551A5EED24}.Debug|x86.ActiveCfg = Debug
+		{98448FD8-8026-4FA9-933A-B8551A5EED24}.Release|x64.ActiveCfg = Release
+		{98448FD8-8026-4FA9-933A-B8551A5EED24}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

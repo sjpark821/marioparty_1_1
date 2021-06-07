@@ -2,8 +2,8 @@
 
 #define Swap(x, y) temp = x, x = y, y = temp
 
-#include <stdio.h>
 #include <bangtal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
